@@ -37,7 +37,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='pcap2asn.py', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--i', type=str, help='Input pcap file name')
     parser.add_argument('--s', help='Evalute source IP', action='store_true')
-    parser.add_argument('--d', help='Evalute destination IP', action='store_true')
+    parser.add_argument('--d', help='Evalute destination IP (Default if Nothing specified', action='store_true')
     parser.add_argument('--o', type=str, help='Output csv file name with ASN info')
     parser.add_argument('--D', help='Enable DEBUG mode', action='store_true')
     args = vars(parser.parse_args())   # Parse Arguments
@@ -49,7 +49,7 @@ if __name__ == '__main__':
     if args['i'] is None:
         args['i'] = raw_input("Enter pcap file name: ")
     if args['o'] is None:
-        args['o'] = raw_input("Enter output file name: ")
+        args['o'] = raw_input("Enter output file name: ")    
     pkts = rdpcap(args['i'])
     try:
         with open(args['o'], 'w') as fh:
@@ -59,7 +59,7 @@ if __name__ == '__main__':
             for pkt in pkts:   # Iterate over each packets in pcap file
                 if args['s']:  # If source IP (--s) argument is present 
                     ip = pkt.getlayer(IP).src
-                elif args['d']: # if destination IP (--d) argument is present
+                else: # by default pick destination address. 
                     ip = pkt.getlayer(IP).dst
                 logging.debug("IP address: {}".format(ip))
                 ip_addr = ipaddress.IPv4Address(ip) # Convert in to IPv4Address object
