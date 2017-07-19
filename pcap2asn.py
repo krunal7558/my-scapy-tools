@@ -1,14 +1,12 @@
-################################################################################
+#########################################################################################################
 # Script Name: pcap2asn.py
 # Author : Krunal Shah
 # Written and tested with Python2.7.12
 # Last update : 17 July 2017
-# Got DDoS? Did you defend ? Great. Want to look back where it was originated from? Or just want to find out
-# captured traffic's Source or Destination AS numbers?
 # This Python script is developed to parse pcap file and extract its source or destinatipn IP address 
 # and find out its asn,contry_code, ASN description using iptoasn REST API and dumps results in csv file 
 # for further analysis.
-################################################################################
+########################################################################################################
 '''
 $python pcap2asn.py --i pcapdata_f1528556.pcap --s --o pcap2asn-report.csv
 $python pcap2asn.py --help
