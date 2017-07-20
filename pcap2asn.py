@@ -1,8 +1,9 @@
+#!/usr/bin/python
+
 #########################################################################################################
 # Script Name: pcap2asn.py
 # Author : Krunal Shah
 # Written and tested with Python2.7.12
-# Last update : 17 July 2017
 # This Python script is developed to parse pcap file and extract its source or destinatipn IP address 
 # and find out its asn,contry_code, ASN description using iptoasn REST API and dumps results in csv file 
 # for further analysis.
@@ -21,7 +22,6 @@ optional arguments:
   --o O       Output csv file name with ASN info (default: None)
 '''
 
-#!/usr/bin/python
 import requests, logging, argparse, csv, json
 import ipaddr as ipaddress
 # Import scapy modules here
@@ -37,7 +37,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='pcap2asn.py', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--i', type=str, help='Input pcap file name')
     parser.add_argument('--s', help='Evalute source IP', action='store_true')
-    parser.add_argument('--d', help='Evalute destination IP (Default if Nothing specified', action='store_true')
+    parser.add_argument('--d', help='Evalute destination IP (Default if Nothing specified)', action='store_true')
     parser.add_argument('--o', type=str, help='Output csv file name with ASN info')
     parser.add_argument('--D', help='Enable DEBUG mode', action='store_true')
     args = vars(parser.parse_args())   # Parse Arguments
@@ -50,13 +50,13 @@ if __name__ == '__main__':
         args['i'] = raw_input("Enter pcap file name: ")
     if args['o'] is None:
         args['o'] = raw_input("Enter output file name: ")    
-    pkts = rdpcap(args['i'])
+    pkts = rdpcap(args['i'])  # Scapy function call to open pcap file and create PacketList object to iterate over
     try:
         with open(args['o'], 'w') as fh:
             fieldnames = ['ip', 'as_number', 'country_code', 'description']
             csvfh = csv.DictWriter(fh, fieldnames=fieldnames)
             csvfh.writeheader() # Write first row with field names
-            for pkt in pkts:   # Iterate over each packets in pcap file
+            for pkt in pkts:   # Iterate over each packets in pcap file (PacketList object) 
                 if args['s']:  # If source IP (--s) argument is present 
                     ip = pkt.getlayer(IP).src
                 else: # by default pick destination address. 
@@ -64,7 +64,7 @@ if __name__ == '__main__':
                 logging.debug("IP address: {}".format(ip))
                 ip_addr = ipaddress.IPv4Address(ip) # Convert in to IPv4Address object
                 if not (ip_addr.is_private or ip_addr.is_multicast or ip_addr.is_loopback or ip_addr.is_reserved):
-                    response = requests.get(ip2asn_url+ip).json()
+                    response = requests.get(ip2asn_url+ip).json() # Make iptoasn API call to get response in JSON and map it to a dictionary object
                     try:
                         csvfh.writerow({'ip':ip, 'as_number':response["as_number"], 'country_code':response["as_country_code"], 'description':response["as_description"]})
                         logging.debug("{},{},{},{}".format(ip, response["as_number"], response["as_country_code"], response["as_description"]))
@@ -73,5 +73,5 @@ if __name__ == '__main__':
                         logging.debug("{},{},{},{}".format(ip, "unknown", "unknown", "unknown"))
                 else:
                     csvfh.writerow({'ip':ip, 'as_number':"NA", 'country_code':"NA", 'description':"NA"})
-    except Exception as e:
+    except Exception as e:  # Catching too generic exception but thats OK
         logging.error(e)
