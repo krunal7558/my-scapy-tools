@@ -23,7 +23,7 @@ optional arguments:
 '''
 
 import requests, logging, argparse, csv, json
-import ipaddr as ipaddress
+from netaddr import *
 # Import scapy modules here
 from scapy.plist import PacketList
 from scapy.layers import *
@@ -53,7 +53,7 @@ if __name__ == '__main__':
     pkts = rdpcap(args['i'])  # Scapy function call to open pcap file and create PacketList object to iterate over
     try:
         with open(args['o'], 'w') as fh:
-            fieldnames = ['ip', 'as_number', 'country_code', 'description']
+            fieldnames = ['ip','prefix', 'as_number', 'country_code', 'description']
             csvfh = csv.DictWriter(fh, fieldnames=fieldnames)
             csvfh.writeheader() # Write first row with field names
             for pkt in pkts:   # Iterate over each packets in pcap file (PacketList object) 
@@ -62,11 +62,12 @@ if __name__ == '__main__':
                 else: # by default pick destination address. 
                     ip = pkt.getlayer(IP).dst
                 logging.debug("IP address: {}".format(ip))
-                ip_addr = ipaddress.IPv4Address(ip) # Convert in to IPv4Address object
-                if not (ip_addr.is_private or ip_addr.is_multicast or ip_addr.is_loopback or ip_addr.is_reserved):
+                ip_addr = IPAddress(ip) # Convert in to IPv4Address object
+                if not (ip_addr.is_private() or ip_addr.is_multicast() or ip_addr.is_loopback() or ip_addr.is_reserved()):
                     response = requests.get(ip2asn_url+ip).json() # Make iptoasn API call to get response in JSON and map it to a dictionary object
                     try:
-                        csvfh.writerow({'ip':ip, 'as_number':response["as_number"], 'country_code':response["as_country_code"], 'description':response["as_description"]})
+                        prefix = str(IPRange(response['first_ip'], response['last_ip']).cidrs()[0]) # Create prefix from first and last IP
+                        csvfh.writerow({'ip':ip, 'prefix':prefix, 'as_number':response["as_number"], 'country_code':response["as_country_code"], 'description':response["as_description"]})
                         logging.debug("{},{},{},{}".format(ip, response["as_number"], response["as_country_code"], response["as_description"]))
                     except:
                         csvfh.writerow({'ip':ip, 'as_number':"unknown", 'country_code':"unknown", 'description':"unknown"})
